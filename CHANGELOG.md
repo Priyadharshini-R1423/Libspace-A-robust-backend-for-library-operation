@@ -1,184 +1,30 @@
-# 6.0.0 (2025-02-28)
-  * Drop support for NodeJS <= 16
-  * Remove `node-pre-gyp` in favor of `prebuildify`, prebuilt binaries are now shipped with the package
-  * Update `node-addon-api` to 8.3.0
-  * Update JS code to newer ES syntax
+# Changelog
 
-# 5.1.0 (2022-10-06)
-  * Update `node-pre-gyp` to 1.0.11
+All notable changes to this project will be documented in this file.
 
-# 5.1.0 (2022-10-06)
-  * Update `node-pre-gyp` to 1.0.10
-  * Replace `nodeunit` with `jest` as the testing library
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# 5.0.1 (2021-02-22)
+## [v1.0.2](https://github.com/ljharb/call-bind-apply-helpers/compare/v1.0.1...v1.0.2) - 2025-02-12
 
-  * Update `node-pre-gyp` to 1.0.0
+### Commits
 
-# 5.0.0 (2020-06-02)
+- [types] improve inferred types [`e6f9586`](https://github.com/ljharb/call-bind-apply-helpers/commit/e6f95860a3c72879cb861a858cdfb8138fbedec1)
+- [Dev Deps] update `@arethetypeswrong/cli`, `@ljharb/tsconfig`, `@types/tape`, `es-value-fixtures`, `for-each`, `has-strict-mode`, `object-inspect` [`e43d540`](https://github.com/ljharb/call-bind-apply-helpers/commit/e43d5409f97543bfbb11f345d47d8ce4e066d8c1)
 
-  * Fix the bcrypt "wrap-around" bug. It affects passwords with lengths >= 255.
-    It is uncommon but it's a bug nevertheless. Previous attempts to fix the bug
-    was unsuccessful.
-  * Experimental support for z/OS
-  * Fix a bug related to NUL in password input
-  * Update `node-pre-gyp` to 0.15.0
+## [v1.0.1](https://github.com/ljharb/call-bind-apply-helpers/compare/v1.0.0...v1.0.1) - 2024-12-08
 
-# 4.0.1 (2020-02-27)
+### Commits
 
-  * Fix compilation errors in Alpine linux
+- [types] `reflectApply`: fix types [`4efc396`](https://github.com/ljharb/call-bind-apply-helpers/commit/4efc3965351a4f02cc55e836fa391d3d11ef2ef8)
+- [Fix] `reflectApply`: oops, Reflect is not a function [`83cc739`](https://github.com/ljharb/call-bind-apply-helpers/commit/83cc7395de6b79b7730bdf092f1436f0b1263c75)
+- [Dev Deps] update `@arethetypeswrong/cli` [`80bd5d3`](https://github.com/ljharb/call-bind-apply-helpers/commit/80bd5d3ae58b4f6b6995ce439dd5a1bcb178a940)
 
-# 4.0.0 (2020-02-17)
+## v1.0.0 - 2024-12-05
 
-  * Switch to NAPI bcrypt
-  * Drop support for NodeJS 8
+### Commits
 
-# 3.0.8 (2019-12-31)
-
-  * Update `node-pre-gyp` to 0.14
-  * Pre-built binaries for NodeJS 13
-
-# 3.0.7 (2019-10-18)
-
-  * Update `nan` to 2.14.0
-  * Update `node-pre-gyp` to 0.13
-
-# 3.0.6 (2019-04-11)
-
-  * Update `nan` to 2.13.2
-
-# 3.0.5 (2019-03-19)
-
-  * Update `nan` to 2.13.1
-  * NodeJS 12 compatibility
-  * Remove `node-pre-gyp` from bundled dependencies
-
-# 3.0.4-napi (2019-03-08)
-
-  * Sync N-API bcrypt with NAN bcrypt
-
-# 3.0.4 (2019-02-07)
-
-  * Fix GCC, NAN and V8 deprecation warnings
-
-# 3.0.3 (2018-12-19)
-
-  * Update `nan` to 2.12.1
-
-# 3.0.2 (2018-10-18)
-
-  * Update `nan` to 2.11.1
-
-# 3.0.1 (2018-09-20)
-
-  * Update `nan` to 2.11.0
-
-# 3.0.0 (2018-07-06)
-
-  * Drop support for NodeJS <= 4
-
-# 2.0.1 (2018-04-20)
-
-  * Update `node-pre-gyp` to allow downloading prebuilt modules
-
-# 2.0.0 (2018-04-07)
-
-  * Make `2b` the default bcrypt version
-
-# 1.1.0-napi (2018-01-21)
-
-  * Initial support for [N-API](https://nodejs.org/api/n-api.html)
-
-# 1.0.3 (2016-08-23)
-
-  * update to nan v2.6.2 for NodeJS 8 support
-  * Fix: use npm scripts instead of node-gyp directly.
-
-# 1.0.2 (2016-12-31)
-
-  * Fix `compare` promise rejection with invalid arguments
-
-# 1.0.1 (2016-12-07)
-
-  * Fix destructuring imports with promises
-
-# 1.0.0 (2016-12-04)
-
-  * add Promise support (commit 2488473)
-
-# 0.8.7 (2016-06-09)
-
-  * update nan to 2.3.5 for improved node v6 support
-
-# 0.8.6 (2016-04-20)
-
-  * update nan for node v6 support
-
-# 0.8.5 (2015-08-12)
-
-  * update to nan v2 (adds support for iojs 3)
-
-# 0.8.4 (2015-07-24)
-
-  * fix deprecation warning for the Encode API
-
-# 0.8.3 (2015-05-06)
-
-  * update nan to 1.8.4 for iojs 2.x support
-
-# 0.8.2 (2015-03-28)
-
-  * always use callback for generating random bytes to avoid blocking
-
-# 0.8.1 (2015-01-18)
-  * update NaN to 1.5.0 for iojs support
-
-# 0.8.0 (2014-08-03)
-  * migrate to NAN for bindings
-
-# v0.5.0
-  * Fix for issue around empty string params throwing Errors.
-  * Method deprecation.
-  * Upgrade from libeio/ev to libuv. (shtylman)
-  ** --- NOTE --- Breaks 0.4.x compatability
-  * EV_MULTIPLICITY compile flag.
-
-# v0.4.1
-  * Thread safety fix around OpenSSL (GH-32). (bnoordhuis - through node)
-  * C++ code changes using delete and new instead of malloc and free. (shtylman)
-  * Compile options for speed, zoom. (shtylman)
-  * Move much of the type and variable checking to the JS. (shtylman)
-
-# v0.4.0
-  * Added getRounds function that will tell you the number of rounds within a hash/salt
-
-# v0.3.2
-  * Fix api issue with async salt gen first param
-
-# v0.3.1
-  * Compile under node 0.5.x
-
-# v0.3.0
-  * Internal Refactoring
-  * Remove pthread dependencies and locking
-  * Fix compiler warnings and a memory bug
-
-# v0.2.4
-  * Use threadsafe functions instead of pthread mutexes
-  * salt validation to make sure the salt is of the correct size and format
-
-# v0.2.3
-  * cygwin support
-
-# v0.2.2
-  * Remove dependency on libbsd, use libssl instead
-
-# v0.2.0
-  * Added async functionality
-  * API changes
-    * hashpw -> encrypt
-    * all old sync methods now end with _sync
-  * Removed libbsd(arc4random) dependency...now uses openssl which is more widely spread
-
-# v0.1.2
-  * Security fix. Wasn't reading rounds in properly and was always only using 4 rounds
+- Initial implementation, tests, readme [`7879629`](https://github.com/ljharb/call-bind-apply-helpers/commit/78796290f9b7430c9934d6f33d94ae9bc89fce04)
+- Initial commit [`3f1dc16`](https://github.com/ljharb/call-bind-apply-helpers/commit/3f1dc164afc43285631b114a5f9dd9137b2b952f)
+- npm init [`081df04`](https://github.com/ljharb/call-bind-apply-helpers/commit/081df048c312fcee400922026f6e97281200a603)
+- Only apps should have lockfiles [`5b9ca0f`](https://github.com/ljharb/call-bind-apply-helpers/commit/5b9ca0fe8101ebfaf309c549caac4e0a017ed930)
