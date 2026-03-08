@@ -1,308 +1,317 @@
-# Chokidar [![Weekly downloads](https://img.shields.io/npm/dw/chokidar.svg)](https://github.com/paulmillr/chokidar) [![Yearly downloads](https://img.shields.io/npm/dy/chokidar.svg)](https://github.com/paulmillr/chokidar)
+# cookie
 
-> Minimal and efficient cross-platform file watching library
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-url]
+[![Node.js Version][node-image]][node-url]
+[![Build Status][ci-image]][ci-url]
+[![Coverage Status][coveralls-image]][coveralls-url]
 
-[![NPM](https://nodei.co/npm/chokidar.png)](https://www.npmjs.com/package/chokidar)
+Basic HTTP cookie parser and serializer for HTTP servers.
 
-## Why?
+## Installation
 
-Node.js `fs.watch`:
-
-* Doesn't report filenames on MacOS.
-* Doesn't report events at all when using editors like Sublime on MacOS.
-* Often reports events twice.
-* Emits most changes as `rename`.
-* Does not provide an easy way to recursively watch file trees.
-* Does not support recursive watching on Linux.
-
-Node.js `fs.watchFile`:
-
-* Almost as bad at event handling.
-* Also does not provide any recursive watching.
-* Results in high CPU utilization.
-
-Chokidar resolves these problems.
-
-Initially made for **[Brunch](https://brunch.io/)** (an ultra-swift web app build tool), it is now used in
-[Microsoft's Visual Studio Code](https://github.com/microsoft/vscode),
-[gulp](https://github.com/gulpjs/gulp/),
-[karma](https://karma-runner.github.io/),
-[PM2](https://github.com/Unitech/PM2),
-[browserify](http://browserify.org/),
-[webpack](https://webpack.github.io/),
-[BrowserSync](https://www.browsersync.io/),
-and [many others](https://www.npmjs.com/browse/depended/chokidar).
-It has proven itself in production environments.
-
-Version 3 is out! Check out our blog post about it: [Chokidar 3: How to save 32TB of traffic every week](https://paulmillr.com/posts/chokidar-3-save-32tb-of-traffic/)
-
-## How?
-
-Chokidar does still rely on the Node.js core `fs` module, but when using
-`fs.watch` and `fs.watchFile` for watching, it normalizes the events it
-receives, often checking for truth by getting file stats and/or dir contents.
-
-On MacOS, chokidar by default uses a native extension exposing the Darwin
-`FSEvents` API. This provides very efficient recursive watching compared with
-implementations like `kqueue` available on most \*nix platforms. Chokidar still
-does have to do some work to normalize the events received that way as well.
-
-On most other platforms, the `fs.watch`-based implementation is the default, which
-avoids polling and keeps CPU usage down. Be advised that chokidar will initiate
-watchers recursively for everything within scope of the paths that have been
-specified, so be judicious about not wasting system resources by watching much
-more than needed.
-
-## Getting started
-
-Install with npm:
+This is a [Node.js](https://nodejs.org/en/) module available through the
+[npm registry](https://www.npmjs.com/). Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
 ```sh
-npm install chokidar
-```
-
-Then `require` and use it in your code:
-
-```javascript
-const chokidar = require('chokidar');
-
-// One-liner for current directory
-chokidar.watch('.').on('all', (event, path) => {
-  console.log(event, path);
-});
+$ npm install cookie
 ```
 
 ## API
 
-```javascript
-// Example of a more typical implementation structure
-
-// Initialize watcher.
-const watcher = chokidar.watch('file, dir, glob, or array', {
-  ignored: /(^|[\/\\])\../, // ignore dotfiles
-  persistent: true
-});
-
-// Something to use when events are received.
-const log = console.log.bind(console);
-// Add event listeners.
-watcher
-  .on('add', path => log(`File ${path} has been added`))
-  .on('change', path => log(`File ${path} has been changed`))
-  .on('unlink', path => log(`File ${path} has been removed`));
-
-// More possible events.
-watcher
-  .on('addDir', path => log(`Directory ${path} has been added`))
-  .on('unlinkDir', path => log(`Directory ${path} has been removed`))
-  .on('error', error => log(`Watcher error: ${error}`))
-  .on('ready', () => log('Initial scan complete. Ready for changes'))
-  .on('raw', (event, path, details) => { // internal
-    log('Raw event info:', event, path, details);
-  });
-
-// 'add', 'addDir' and 'change' events also receive stat() results as second
-// argument when available: https://nodejs.org/api/fs.html#fs_class_fs_stats
-watcher.on('change', (path, stats) => {
-  if (stats) console.log(`File ${path} changed size to ${stats.size}`);
-});
-
-// Watch new files.
-watcher.add('new-file');
-watcher.add(['new-file-2', 'new-file-3', '**/other-file*']);
-
-// Get list of actual paths being watched on the filesystem
-var watchedPaths = watcher.getWatched();
-
-// Un-watch some files.
-await watcher.unwatch('new-file*');
-
-// Stop watching.
-// The method is async!
-watcher.close().then(() => console.log('closed'));
-
-// Full list of options. See below for descriptions.
-// Do not use this example!
-chokidar.watch('file', {
-  persistent: true,
-
-  ignored: '*.txt',
-  ignoreInitial: false,
-  followSymlinks: true,
-  cwd: '.',
-  disableGlobbing: false,
-
-  usePolling: false,
-  interval: 100,
-  binaryInterval: 300,
-  alwaysStat: false,
-  depth: 99,
-  awaitWriteFinish: {
-    stabilityThreshold: 2000,
-    pollInterval: 100
-  },
-
-  ignorePermissionErrors: false,
-  atomic: true // or a custom 'atomicity delay', in milliseconds (default 100)
-});
-
+```js
+var cookie = require('cookie');
 ```
 
-`chokidar.watch(paths, [options])`
+### cookie.parse(str, options)
 
-* `paths` (string or array of strings). Paths to files, dirs to be watched
-recursively, or glob patterns.
-    - Note: globs must not contain windows separators (`\`),
-    because that's how they work by the standard —
-    you'll need to replace them with forward slashes (`/`).
-    - Note 2: for additional glob documentation, check out low-level
-    library: [picomatch](https://github.com/micromatch/picomatch).
-* `options` (object) Options object as defined below:
+Parse an HTTP `Cookie` header string and returning an object of all cookie name-value pairs.
+The `str` argument is the string representing a `Cookie` header value and `options` is an
+optional object containing additional parsing options.
 
-#### Persistence
+```js
+var cookies = cookie.parse('foo=bar; equation=E%3Dmc%5E2');
+// { foo: 'bar', equation: 'E=mc^2' }
+```
 
-* `persistent` (default: `true`). Indicates whether the process
-should continue to run as long as files are being watched. If set to
-`false` when using `fsevents` to watch, no more events will be emitted
-after `ready`, even if the process continues to run.
+#### Options
 
-#### Path filtering
+`cookie.parse` accepts these properties in the options object.
 
-* `ignored` ([anymatch](https://github.com/es128/anymatch)-compatible definition)
-Defines files/paths to be ignored. The whole relative or absolute path is
-tested, not just filename. If a function with two arguments is provided, it
-gets called twice per path - once with a single argument (the path), second
-time with two arguments (the path and the
-[`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats)
-object of that path).
-* `ignoreInitial` (default: `false`). If set to `false` then `add`/`addDir` events are also emitted for matching paths while
-instantiating the watching as chokidar discovers these file paths (before the `ready` event).
-* `followSymlinks` (default: `true`). When `false`, only the
-symlinks themselves will be watched for changes instead of following
-the link references and bubbling events through the link's path.
-* `cwd` (no default). The base directory from which watch `paths` are to be
-derived. Paths emitted with events will be relative to this.
-* `disableGlobbing` (default: `false`). If set to `true` then the strings passed to `.watch()` and `.add()` are treated as
-literal path names, even if they look like globs.
+##### decode
 
-#### Performance
+Specifies a function that will be used to decode a cookie's value. Since the value of a cookie
+has a limited character set (and must be a simple string), this function can be used to decode
+a previously-encoded cookie value into a JavaScript string or other object.
 
-* `usePolling` (default: `false`).
-Whether to use fs.watchFile (backed by polling), or fs.watch. If polling
-leads to high CPU utilization, consider setting this to `false`. It is
-typically necessary to **set this to `true` to successfully watch files over
-a network**, and it may be necessary to successfully watch files in other
-non-standard situations. Setting to `true` explicitly on MacOS overrides the
-`useFsEvents` default. You may also set the CHOKIDAR_USEPOLLING env variable
-to true (1) or false (0) in order to override this option.
-* _Polling-specific settings_ (effective when `usePolling: true`)
-  * `interval` (default: `100`). Interval of file system polling, in milliseconds. You may also
-    set the CHOKIDAR_INTERVAL env variable to override this option.
-  * `binaryInterval` (default: `300`). Interval of file system
-  polling for binary files.
-  ([see list of binary extensions](https://github.com/sindresorhus/binary-extensions/blob/master/binary-extensions.json))
-* `useFsEvents` (default: `true` on MacOS). Whether to use the
-`fsevents` watching interface if available. When set to `true` explicitly
-and `fsevents` is available this supercedes the `usePolling` setting. When
-set to `false` on MacOS, `usePolling: true` becomes the default.
-* `alwaysStat` (default: `false`). If relying upon the
-[`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats)
-object that may get passed with `add`, `addDir`, and `change` events, set
-this to `true` to ensure it is provided even in cases where it wasn't
-already available from the underlying watch events.
-* `depth` (default: `undefined`). If set, limits how many levels of
-subdirectories will be traversed.
-* `awaitWriteFinish` (default: `false`).
-By default, the `add` event will fire when a file first appears on disk, before
-the entire file has been written. Furthermore, in some cases some `change`
-events will be emitted while the file is being written. In some cases,
-especially when watching for large files there will be a need to wait for the
-write operation to finish before responding to a file creation or modification.
-Setting `awaitWriteFinish` to `true` (or a truthy value) will poll file size,
-holding its `add` and `change` events until the size does not change for a
-configurable amount of time. The appropriate duration setting is heavily
-dependent on the OS and hardware. For accurate detection this parameter should
-be relatively high, making file watching much less responsive.
-Use with caution.
-  * *`options.awaitWriteFinish` can be set to an object in order to adjust
-  timing params:*
-  * `awaitWriteFinish.stabilityThreshold` (default: 2000). Amount of time in
-  milliseconds for a file size to remain constant before emitting its event.
-  * `awaitWriteFinish.pollInterval` (default: 100). File size polling interval, in milliseconds.
+The default function is the global `decodeURIComponent`, which will decode any URL-encoded
+sequences into their byte representations.
 
-#### Errors
+**note** if an error is thrown from this function, the original, non-decoded cookie value will
+be returned as the cookie's value.
 
-* `ignorePermissionErrors` (default: `false`). Indicates whether to watch files
-that don't have read permissions if possible. If watching fails due to `EPERM`
-or `EACCES` with this set to `true`, the errors will be suppressed silently.
-* `atomic` (default: `true` if `useFsEvents` and `usePolling` are `false`).
-Automatically filters out artifacts that occur when using editors that use
-"atomic writes" instead of writing directly to the source file. If a file is
-re-added within 100 ms of being deleted, Chokidar emits a `change` event
-rather than `unlink` then `add`. If the default of 100 ms does not work well
-for you, you can override it by setting `atomic` to a custom value, in
-milliseconds.
+### cookie.serialize(name, value, options)
 
-### Methods & Events
+Serialize a cookie name-value pair into a `Set-Cookie` header string. The `name` argument is the
+name for the cookie, the `value` argument is the value to set the cookie to, and the `options`
+argument is an optional object containing additional serialization options.
 
-`chokidar.watch()` produces an instance of `FSWatcher`. Methods of `FSWatcher`:
+```js
+var setCookie = cookie.serialize('foo', 'bar');
+// foo=bar
+```
 
-* `.add(path / paths)`: Add files, directories, or glob patterns for tracking.
-Takes an array of strings or just one string.
-* `.on(event, callback)`: Listen for an FS event.
-Available events: `add`, `addDir`, `change`, `unlink`, `unlinkDir`, `ready`,
-`raw`, `error`.
-Additionally `all` is available which gets emitted with the underlying event
-name and path for every event other than `ready`, `raw`, and `error`.  `raw` is internal, use it carefully.
-* `.unwatch(path / paths)`: Stop watching files, directories, or glob patterns.
-Takes an array of strings or just one string.
-* `.close()`: **async** Removes all listeners from watched files. Asynchronous, returns Promise. Use with `await` to ensure bugs don't happen.
-* `.getWatched()`: Returns an object representing all the paths on the file
-system being watched by this `FSWatcher` instance. The object's keys are all the
-directories (using absolute paths unless the `cwd` option was used), and the
-values are arrays of the names of the items contained in each directory.
+#### Options
 
-## CLI
+`cookie.serialize` accepts these properties in the options object.
 
-If you need a CLI interface for your file watching, check out
-[chokidar-cli](https://github.com/open-cli-tools/chokidar-cli), allowing you to
-execute a command on each change, or get a stdio stream of change events.
+##### domain
 
-## Install Troubleshooting
+Specifies the value for the [`Domain` `Set-Cookie` attribute][rfc-6265-5.2.3]. By default, no
+domain is set, and most clients will consider the cookie to apply to only the current domain.
 
-* `npm WARN optional dep failed, continuing fsevents@n.n.n`
-  * This message is normal part of how `npm` handles optional dependencies and is
-    not indicative of a problem. Even if accompanied by other related error messages,
-    Chokidar should function properly.
+##### encode
 
-* `TypeError: fsevents is not a constructor`
-  * Update chokidar by doing `rm -rf node_modules package-lock.json yarn.lock && npm install`, or update your dependency that uses chokidar.
+Specifies a function that will be used to encode a cookie's value. Since value of a cookie
+has a limited character set (and must be a simple string), this function can be used to encode
+a value into a string suited for a cookie's value.
 
-* Chokidar is producing `ENOSP` error on Linux, like this:
-  * `bash: cannot set terminal process group (-1): Inappropriate ioctl for device bash: no job control in this shell`
-  `Error: watch /home/ ENOSPC`
-  * This means Chokidar ran out of file handles and you'll need to increase their count by executing the following command in Terminal:
-  `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
+The default function is the global `encodeURIComponent`, which will encode a JavaScript string
+into UTF-8 byte sequences and then URL-encode any that fall outside of the cookie range.
 
-## Changelog
+##### expires
 
-For more detailed changelog, see [`full_changelog.md`](.github/full_changelog.md).
-- **v3.5 (Jan 6, 2021):** Support for ARM Macs with Apple Silicon. Fixes for deleted symlinks.
-- **v3.4 (Apr 26, 2020):** Support for directory-based symlinks. Fixes for macos file replacement.
-- **v3.3 (Nov 2, 2019):** `FSWatcher#close()` method became async. That fixes IO race conditions related to close method.
-- **v3.2 (Oct 1, 2019):** Improve Linux RAM usage by 50%. Race condition fixes. Windows glob fixes. Improve stability by using tight range of dependency versions.
-- **v3.1 (Sep 16, 2019):** dotfiles are no longer filtered out by default. Use `ignored` option if needed. Improve initial Linux scan time by 50%.
-- **v3 (Apr 30, 2019):** massive CPU & RAM consumption improvements; reduces deps / package size by a factor of 17x and bumps Node.js requirement to v8.16 and higher.
-- **v2 (Dec 29, 2017):** Globs are now posix-style-only; without windows support. Tons of bugfixes.
-- **v1 (Apr 7, 2015):** Glob support, symlink support, tons of bugfixes. Node 0.8+ is supported
-- **v0.1 (Apr 20, 2012):** Initial release, extracted from [Brunch](https://github.com/brunch/brunch/blob/9847a065aea300da99bd0753f90354cde9de1261/src/helpers.coffee#L66)
+Specifies the `Date` object to be the value for the [`Expires` `Set-Cookie` attribute][rfc-6265-5.2.1].
+By default, no expiration is set, and most clients will consider this a "non-persistent cookie" and
+will delete it on a condition like exiting a web browser application.
 
-## Also
+**note** the [cookie storage model specification][rfc-6265-5.3] states that if both `expires` and
+`maxAge` are set, then `maxAge` takes precedence, but it is possible not all clients by obey this,
+so if both are set, they should point to the same date and time.
 
-Why was chokidar named this way? What's the meaning behind it?
+##### httpOnly
 
->Chowkidar is a transliteration of a Hindi word meaning 'watchman, gatekeeper', चौकीदार. This ultimately comes from Sanskrit _ चतुष्क_ (crossway, quadrangle, consisting-of-four). This word is also used in other languages like Urdu as (چوکیدار) which is widely used in Pakistan and India. 
+Specifies the `boolean` value for the [`HttpOnly` `Set-Cookie` attribute][rfc-6265-5.2.6]. When truthy,
+the `HttpOnly` attribute is set, otherwise it is not. By default, the `HttpOnly` attribute is not set.
+
+**note** be careful when setting this to `true`, as compliant clients will not allow client-side
+JavaScript to see the cookie in `document.cookie`.
+
+##### maxAge
+
+Specifies the `number` (in seconds) to be the value for the [`Max-Age` `Set-Cookie` attribute][rfc-6265-5.2.2].
+The given number will be converted to an integer by rounding down. By default, no maximum age is set.
+
+**note** the [cookie storage model specification][rfc-6265-5.3] states that if both `expires` and
+`maxAge` are set, then `maxAge` takes precedence, but it is possible not all clients by obey this,
+so if both are set, they should point to the same date and time.
+
+##### partitioned
+
+Specifies the `boolean` value for the [`Partitioned` `Set-Cookie`](rfc-cutler-httpbis-partitioned-cookies)
+attribute. When truthy, the `Partitioned` attribute is set, otherwise it is not. By default, the
+`Partitioned` attribute is not set.
+
+**note** This is an attribute that has not yet been fully standardized, and may change in the future.
+This also means many clients may ignore this attribute until they understand it.
+
+More information about can be found in [the proposal](https://github.com/privacycg/CHIPS).
+
+##### path
+
+Specifies the value for the [`Path` `Set-Cookie` attribute][rfc-6265-5.2.4]. By default, the path
+is considered the ["default path"][rfc-6265-5.1.4].
+
+##### priority
+
+Specifies the `string` to be the value for the [`Priority` `Set-Cookie` attribute][rfc-west-cookie-priority-00-4.1].
+
+  - `'low'` will set the `Priority` attribute to `Low`.
+  - `'medium'` will set the `Priority` attribute to `Medium`, the default priority when not set.
+  - `'high'` will set the `Priority` attribute to `High`.
+
+More information about the different priority levels can be found in
+[the specification][rfc-west-cookie-priority-00-4.1].
+
+**note** This is an attribute that has not yet been fully standardized, and may change in the future.
+This also means many clients may ignore this attribute until they understand it.
+
+##### sameSite
+
+Specifies the `boolean` or `string` to be the value for the [`SameSite` `Set-Cookie` attribute][rfc-6265bis-09-5.4.7].
+
+  - `true` will set the `SameSite` attribute to `Strict` for strict same site enforcement.
+  - `false` will not set the `SameSite` attribute.
+  - `'lax'` will set the `SameSite` attribute to `Lax` for lax same site enforcement.
+  - `'none'` will set the `SameSite` attribute to `None` for an explicit cross-site cookie.
+  - `'strict'` will set the `SameSite` attribute to `Strict` for strict same site enforcement.
+
+More information about the different enforcement levels can be found in
+[the specification][rfc-6265bis-09-5.4.7].
+
+**note** This is an attribute that has not yet been fully standardized, and may change in the future.
+This also means many clients may ignore this attribute until they understand it.
+
+##### secure
+
+Specifies the `boolean` value for the [`Secure` `Set-Cookie` attribute][rfc-6265-5.2.5]. When truthy,
+the `Secure` attribute is set, otherwise it is not. By default, the `Secure` attribute is not set.
+
+**note** be careful when setting this to `true`, as compliant clients will not send the cookie back to
+the server in the future if the browser does not have an HTTPS connection.
+
+## Example
+
+The following example uses this module in conjunction with the Node.js core HTTP server
+to prompt a user for their name and display it back on future visits.
+
+```js
+var cookie = require('cookie');
+var escapeHtml = require('escape-html');
+var http = require('http');
+var url = require('url');
+
+function onRequest(req, res) {
+  // Parse the query string
+  var query = url.parse(req.url, true, true).query;
+
+  if (query && query.name) {
+    // Set a new cookie with the name
+    res.setHeader('Set-Cookie', cookie.serialize('name', String(query.name), {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 7 // 1 week
+    }));
+
+    // Redirect back after setting cookie
+    res.statusCode = 302;
+    res.setHeader('Location', req.headers.referer || '/');
+    res.end();
+    return;
+  }
+
+  // Parse the cookies on the request
+  var cookies = cookie.parse(req.headers.cookie || '');
+
+  // Get the visitor name set in the cookie
+  var name = cookies.name;
+
+  res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+
+  if (name) {
+    res.write('<p>Welcome back, <b>' + escapeHtml(name) + '</b>!</p>');
+  } else {
+    res.write('<p>Hello, new visitor!</p>');
+  }
+
+  res.write('<form method="GET">');
+  res.write('<input placeholder="enter your name" name="name"> <input type="submit" value="Set Name">');
+  res.end('</form>');
+}
+
+http.createServer(onRequest).listen(3000);
+```
+
+## Testing
+
+```sh
+$ npm test
+```
+
+## Benchmark
+
+```
+$ npm run bench
+
+> cookie@0.5.0 bench
+> node benchmark/index.js
+
+  node@18.18.2
+  acorn@8.10.0
+  ada@2.6.0
+  ares@1.19.1
+  brotli@1.0.9
+  cldr@43.1
+  icu@73.2
+  llhttp@6.0.11
+  modules@108
+  napi@9
+  nghttp2@1.57.0
+  nghttp3@0.7.0
+  ngtcp2@0.8.1
+  openssl@3.0.10+quic
+  simdutf@3.2.14
+  tz@2023c
+  undici@5.26.3
+  unicode@15.0
+  uv@1.44.2
+  uvwasi@0.0.18
+  v8@10.2.154.26-node.26
+  zlib@1.2.13.1-motley
+
+> node benchmark/parse-top.js
+
+  cookie.parse - top sites
+
+  14 tests completed.
+
+  parse accounts.google.com x 2,588,913 ops/sec ±0.74% (186 runs sampled)
+  parse apple.com           x 2,370,002 ops/sec ±0.69% (186 runs sampled)
+  parse cloudflare.com      x 2,213,102 ops/sec ±0.88% (188 runs sampled)
+  parse docs.google.com     x 2,194,157 ops/sec ±1.03% (184 runs sampled)
+  parse drive.google.com    x 2,265,084 ops/sec ±0.79% (187 runs sampled)
+  parse en.wikipedia.org    x   457,099 ops/sec ±0.81% (186 runs sampled)
+  parse linkedin.com        x   504,407 ops/sec ±0.89% (186 runs sampled)
+  parse maps.google.com     x 1,230,959 ops/sec ±0.98% (186 runs sampled)
+  parse microsoft.com       x   926,294 ops/sec ±0.88% (184 runs sampled)
+  parse play.google.com     x 2,311,338 ops/sec ±0.83% (185 runs sampled)
+  parse support.google.com  x 1,508,850 ops/sec ±0.86% (186 runs sampled)
+  parse www.google.com      x 1,022,582 ops/sec ±1.32% (182 runs sampled)
+  parse youtu.be            x   332,136 ops/sec ±1.02% (185 runs sampled)
+  parse youtube.com         x   323,833 ops/sec ±0.77% (183 runs sampled)
+
+> node benchmark/parse.js
+
+  cookie.parse - generic
+
+  6 tests completed.
+
+  simple      x 3,214,032 ops/sec ±1.61% (183 runs sampled)
+  decode      x   587,237 ops/sec ±1.16% (187 runs sampled)
+  unquote     x 2,954,618 ops/sec ±1.35% (183 runs sampled)
+  duplicates  x   857,008 ops/sec ±0.89% (187 runs sampled)
+  10 cookies  x   292,133 ops/sec ±0.89% (187 runs sampled)
+  100 cookies x    22,610 ops/sec ±0.68% (187 runs sampled)
+```
+
+## References
+
+- [RFC 6265: HTTP State Management Mechanism][rfc-6265]
+- [Same-site Cookies][rfc-6265bis-09-5.4.7]
+
+[rfc-cutler-httpbis-partitioned-cookies]: https://tools.ietf.org/html/draft-cutler-httpbis-partitioned-cookies/
+[rfc-west-cookie-priority-00-4.1]: https://tools.ietf.org/html/draft-west-cookie-priority-00#section-4.1
+[rfc-6265bis-09-5.4.7]: https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-09#section-5.4.7
+[rfc-6265]: https://tools.ietf.org/html/rfc6265
+[rfc-6265-5.1.4]: https://tools.ietf.org/html/rfc6265#section-5.1.4
+[rfc-6265-5.2.1]: https://tools.ietf.org/html/rfc6265#section-5.2.1
+[rfc-6265-5.2.2]: https://tools.ietf.org/html/rfc6265#section-5.2.2
+[rfc-6265-5.2.3]: https://tools.ietf.org/html/rfc6265#section-5.2.3
+[rfc-6265-5.2.4]: https://tools.ietf.org/html/rfc6265#section-5.2.4
+[rfc-6265-5.2.5]: https://tools.ietf.org/html/rfc6265#section-5.2.5
+[rfc-6265-5.2.6]: https://tools.ietf.org/html/rfc6265#section-5.2.6
+[rfc-6265-5.3]: https://tools.ietf.org/html/rfc6265#section-5.3
 
 ## License
 
-MIT (c) Paul Miller (<https://paulmillr.com>), see [LICENSE](LICENSE) file.
+[MIT](LICENSE)
+
+[ci-image]: https://badgen.net/github/checks/jshttp/cookie/master?label=ci
+[ci-url]: https://github.com/jshttp/cookie/actions/workflows/ci.yml
+[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/cookie/master
+[coveralls-url]: https://coveralls.io/r/jshttp/cookie?branch=master
+[node-image]: https://badgen.net/npm/node/cookie
+[node-url]: https://nodejs.org/en/download
+[npm-downloads-image]: https://badgen.net/npm/dm/cookie
+[npm-url]: https://npmjs.org/package/cookie
+[npm-version-image]: https://badgen.net/npm/v/cookie
