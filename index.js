@@ -1,62 +1,71 @@
-'use strict';
-module.exports = balanced;
-function balanced(a, b, str) {
-  if (a instanceof RegExp) a = maybeMatch(a, str);
-  if (b instanceof RegExp) b = maybeMatch(b, str);
+/*!
+ * body-parser
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
 
-  var r = range(a, b, str);
+'use strict'
 
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + a.length, r[1]),
-    post: str.slice(r[1] + b.length)
-  };
-}
+/**
+ * @typedef {Object} Parsers
+ * @property {Function} json JSON parser
+ * @property {Function} raw Raw parser
+ * @property {Function} text Text parser
+ * @property {Function} urlencoded URL-encoded parser
+ */
 
-function maybeMatch(reg, str) {
-  var m = str.match(reg);
-  return m ? m[0] : null;
-}
+/**
+ * Module exports.
+ * @type {Function & Parsers}
+ */
+exports = module.exports = bodyParser
 
-balanced.range = range;
-function range(a, b, str) {
-  var begs, beg, left, right, result;
-  var ai = str.indexOf(a);
-  var bi = str.indexOf(b, ai + 1);
-  var i = ai;
+/**
+ * JSON parser.
+ * @public
+ */
+Object.defineProperty(exports, 'json', {
+  configurable: true,
+  enumerable: true,
+  get: () => require('./lib/types/json')
+})
 
-  if (ai >= 0 && bi > 0) {
-    if(a===b) {
-      return [ai, bi];
-    }
-    begs = [];
-    left = str.length;
+/**
+ * Raw parser.
+ * @public
+ */
+Object.defineProperty(exports, 'raw', {
+  configurable: true,
+  enumerable: true,
+  get: () => require('./lib/types/raw')
+})
 
-    while (i >= 0 && !result) {
-      if (i == ai) {
-        begs.push(i);
-        ai = str.indexOf(a, i + 1);
-      } else if (begs.length == 1) {
-        result = [ begs.pop(), bi ];
-      } else {
-        beg = begs.pop();
-        if (beg < left) {
-          left = beg;
-          right = bi;
-        }
+/**
+ * Text parser.
+ * @public
+ */
+Object.defineProperty(exports, 'text', {
+  configurable: true,
+  enumerable: true,
+  get: () => require('./lib/types/text')
+})
 
-        bi = str.indexOf(b, i + 1);
-      }
+/**
+ * URL-encoded parser.
+ * @public
+ */
+Object.defineProperty(exports, 'urlencoded', {
+  configurable: true,
+  enumerable: true,
+  get: () => require('./lib/types/urlencoded')
+})
 
-      i = ai < bi && ai >= 0 ? ai : bi;
-    }
-
-    if (begs.length) {
-      result = [ left, right ];
-    }
-  }
-
-  return result;
+/**
+ * Create a middleware to parse json and urlencoded bodies.
+ *
+ * @deprecated
+ * @public
+ */
+function bodyParser () {
+  throw new Error('The bodyParser() generic has been split into individual middleware to use instead.')
 }

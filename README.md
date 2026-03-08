@@ -1,388 +1,494 @@
-# node.bcrypt.js
+# body-parser
 
-[![ci](https://github.com/kelektiv/node.bcrypt.js/actions/workflows/ci.yaml/badge.svg)](https://github.com/kelektiv/node.bcrypt.js/actions/workflows/ci.yaml)
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-url]
+[![Build Status][ci-image]][ci-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
+[![OpenSSF Scorecard Badge][ossf-scorecard-badge]][ossf-scorecard-visualizer]
 
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/kelektiv/node.bcrypt.js)](https://ci.appveyor.com/project/defunctzombie/node-bcrypt-js-pgo26/branch/master)
+Node.js body parsing middleware.
 
-A library to help you hash passwords.
+Parse incoming request bodies in a middleware before your handlers, available
+under the `req.body` property.
 
-You can read about [bcrypt in Wikipedia][bcryptwiki] as well as in the following article:
-[How To Safely Store A Password][codahale]
+**Note** As `req.body`'s shape is based on user-controlled input, all
+properties and values in this object are untrusted and should be validated
+before trusting. For example, `req.body.foo.toString()` may fail in multiple
+ways, for example the `foo` property may not be there or may not be a string,
+and `toString` may not be a function and instead a string or other user input.
 
-## If You Are Submitting Bugs or Issues
+[Learn about the anatomy of an HTTP transaction in Node.js](https://nodejs.org/en/learn/http/anatomy-of-an-http-transaction).
 
-Please verify that the NodeJS version you are using is a _stable_ version; Unstable versions are currently not supported and issues created while using an unstable version will be closed.
+_This does not handle multipart bodies_, due to their complex and typically
+large nature. For multipart bodies, you may be interested in the following
+modules:
 
-If you are on a stable version of NodeJS, please provide a sufficient code snippet or log files for installation issues. The code snippet does not require you to include confidential information. However, it must provide enough information so the problem can be replicable, or it may be closed without an explanation.
+  * [busboy](https://www.npmjs.com/package/busboy#readme) and
+    [connect-busboy](https://www.npmjs.com/package/connect-busboy#readme)
+  * [multiparty](https://www.npmjs.com/package/multiparty#readme) and
+    [connect-multiparty](https://www.npmjs.com/package/connect-multiparty#readme)
+  * [formidable](https://www.npmjs.com/package/formidable#readme)
+  * [multer](https://www.npmjs.com/package/multer#readme)
 
+This module provides the following parsers:
 
-## Version Compatibility
+  * [JSON body parser](#bodyparserjsonoptions)
+  * [Raw body parser](#bodyparserrawoptions)
+  * [Text body parser](#bodyparsertextoptions)
+  * [URL-encoded form body parser](#bodyparserurlencodedoptions)
 
-_Please upgrade to atleast v5.0.0 to avoid security issues mentioned below._
+Other body parsers you might be interested in:
 
-| Node Version   |   Bcrypt Version  |
-| -------------- | ------------------|
-| 0.4            | <= 0.4            |
-| 0.6, 0.8, 0.10 | >= 0.5            |
-| 0.11           | >= 0.8            |
-| 4              | <= 2.1.0          |
-| 8              | >= 1.0.3 < 4.0.0  |
-| 10, 11         | >= 3              |
-| 12 onwards     | >= 3.0.6          |
+- [body](https://www.npmjs.com/package/body#readme)
+- [co-body](https://www.npmjs.com/package/co-body#readme)
 
-`node-gyp` only works with stable/released versions of node. Since the `bcrypt` module uses `node-gyp` to build and install, you'll need a stable version of node to use bcrypt. If you do not, you'll likely see an error that starts with:
+## Installation
 
+```sh
+$ npm install body-parser
 ```
-gyp ERR! stack Error: "pre" versions of node cannot be installed, use the --nodedir flag instead
-```
-
-## Security Issues And Concerns
-
-> Per bcrypt implementation, only the first 72 bytes of a string are used. Any extra bytes are ignored when matching passwords. Note that this is not the first 72 *characters*. It is possible for a string to contain less than 72 characters, while taking up more than 72 bytes (e.g. a UTF-8 encoded string containing emojis). If a string is provided, it will be encoded using UTF-8.
-
-As should be the case with any security tool, anyone using this library should scrutinise it. If you find or suspect an issue with the code, please bring it to the maintainers' attention. We will spend some time ensuring that this library is as secure as possible.
-
-Here is a list of BCrypt-related security issues/concerns that have come up over the years.
-
-* An [issue with passwords][jtr] was found with a version of the Blowfish algorithm developed for John the Ripper. This is not present in the OpenBSD version and is thus not a problem for this module. HT [zooko][zooko].
-* Versions `< 5.0.0` suffer from bcrypt wrap-around bug and _will truncate passwords >= 255 characters leading to severely weakened passwords_. Please upgrade at  earliest. See [this wiki page][wrap-around-bug] for more details.
-* Versions `< 5.0.0` _do not handle NUL characters inside passwords properly leading to all subsequent characters being dropped and thus resulting in severely weakened passwords_. Please upgrade at earliest. See [this wiki page][improper-nuls] for more details.
-
-## Compatibility Note
-
-This library supports `$2a$` and `$2b$` prefix bcrypt hashes. `$2x$` and `$2y$` hashes are specific to bcrypt implementation developed for John the Ripper. In theory, they should be compatible with `$2b$` prefix.
-
-Compatibility with hashes generated by other languages is not 100% guaranteed due to difference in character encodings. However, it should not be an issue for most cases.
-
-### Migrating from v1.0.x
-
-Hashes generated in earlier version of `bcrypt` remain 100% supported in `v2.x.x` and later versions. In most cases, the migration should be a bump in the `package.json`.
-
-Hashes generated in `v2.x.x` using the defaults parameters will not work in earlier versions.
-
-## Dependencies
-
-* NodeJS
-* `node-gyp`
- * Please check the dependencies for this tool at: https://github.com/nodejs/node-gyp
-  * Windows users will need the options for c# and c++ installed with their visual studio instance.
-  * Python 2.x/3.x
-* `OpenSSL` - This is only required to build the `bcrypt` project if you are using versions <= 0.7.7. Otherwise, we're using the builtin node crypto bindings for seed data (which use the same OpenSSL code paths we were, but don't have the external dependency).
-
-## Install via NPM
-
-```
-npm install bcrypt
-```
-***Note:*** OS X users using Xcode 4.3.1 or above may need to run the following command in their terminal prior to installing if errors occur regarding xcodebuild: ```sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer```
-
-_Pre-built binaries for various NodeJS versions are made available on a best-effort basis._
-
-Only the current stable and supported LTS releases are actively tested against.
-
-_There may be an interval between the release of the module and the availabilty of the compiled modules._
-
-Currently, we have pre-built binaries that support the following platforms:
-
-1. Windows x32 and x64
-2. Linux x64 (GlibC and musl)
-3. macOS
-
-If you face an error like this:
-
-```
-node-pre-gyp ERR! Tried to download(404): https://github.com/kelektiv/node.bcrypt.js/releases/download/v1.0.2/bcrypt_lib-v1.0.2-node-v48-linux-x64.tar.gz
-```
-
-make sure you have the appropriate dependencies installed and configured for your platform. You can find installation instructions for the dependencies for some common platforms [in this page][depsinstall].
-
-## Usage
-
-### async (recommended)
-
-```javascript
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
-const myPlaintextPassword = 's0/\/\P4$$w0rD';
-const someOtherPlaintextPassword = 'not_bacon';
-```
-
-#### To hash a password:
-
-Technique 1 (generate a salt and hash on separate function calls):
-
-```javascript
-bcrypt.genSalt(saltRounds, function(err, salt) {
-    bcrypt.hash(myPlaintextPassword, salt, function(err, hash) {
-        // Store hash in your password DB.
-    });
-});
-```
-
-Technique 2 (auto-gen a salt and hash):
-
-```javascript
-bcrypt.hash(myPlaintextPassword, saltRounds, function(err, hash) {
-    // Store hash in your password DB.
-});
-```
-
-Note that both techniques achieve the same end-result.
-
-#### To check a password:
-
-```javascript
-// Load hash from your password DB.
-bcrypt.compare(myPlaintextPassword, hash, function(err, result) {
-    // result == true
-});
-bcrypt.compare(someOtherPlaintextPassword, hash, function(err, result) {
-    // result == false
-});
-```
-
-[A Note on Timing Attacks](#a-note-on-timing-attacks)
-
-### with promises
-
-bcrypt uses whatever `Promise` implementation is available in `global.Promise`. NodeJS >= 0.12 has a native `Promise` implementation built in. However, this should work in any Promises/A+ compliant implementation.
-
-Async methods that accept a callback, return a `Promise` when callback is not specified if Promise support is available.
-
-```javascript
-bcrypt.hash(myPlaintextPassword, saltRounds).then(function(hash) {
-    // Store hash in your password DB.
-});
-```
-```javascript
-// Load hash from your password DB.
-bcrypt.compare(myPlaintextPassword, hash).then(function(result) {
-    // result == true
-});
-bcrypt.compare(someOtherPlaintextPassword, hash).then(function(result) {
-    // result == false
-});
-```
-
-This is also compatible with `async/await`
-
-```javascript
-async function checkUser(username, password) {
-    //... fetch user from a db etc.
-
-    const match = await bcrypt.compare(password, user.passwordHash);
-
-    if(match) {
-        //login
-    }
-
-    //...
-}
-```
-
-### ESM import
-```javascript
-import bcrypt from "bcrypt";
-
-// later
-await bcrypt.compare(password, hash);
-```
-
-### sync
-
-```javascript
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
-const myPlaintextPassword = 's0/\/\P4$$w0rD';
-const someOtherPlaintextPassword = 'not_bacon';
-```
-
-#### To hash a password:
-
-Technique 1 (generate a salt and hash on separate function calls):
-
-```javascript
-const salt = bcrypt.genSaltSync(saltRounds);
-const hash = bcrypt.hashSync(myPlaintextPassword, salt);
-// Store hash in your password DB.
-```
-
-Technique 2 (auto-gen a salt and hash):
-
-```javascript
-const hash = bcrypt.hashSync(myPlaintextPassword, saltRounds);
-// Store hash in your password DB.
-```
-
-As with async, both techniques achieve the same end-result.
-
-#### To check a password:
-
-```javascript
-// Load hash from your password DB.
-bcrypt.compareSync(myPlaintextPassword, hash); // true
-bcrypt.compareSync(someOtherPlaintextPassword, hash); // false
-```
-
-[A Note on Timing Attacks](#a-note-on-timing-attacks)
-
-### Why is async mode recommended over sync mode?
-We recommend using async API if you use `bcrypt` on a server. Bcrypt hashing is CPU intensive which will cause the sync APIs to block the event loop and prevent your application from servicing any inbound requests or events. The async version uses a thread pool which does not block the main event loop.
 
 ## API
 
-`BCrypt.`
-
-  * `genSaltSync(rounds, minor)`
-    * `rounds` - [OPTIONAL] - the cost of processing the data. (default - 10)
-    * `minor` - [OPTIONAL] - minor version of bcrypt to use. (default - b)
-  * `genSalt(rounds, minor, cb)`
-    * `rounds` - [OPTIONAL] - the cost of processing the data. (default - 10)
-    * `minor` - [OPTIONAL] - minor version of bcrypt to use. (default - b)
-    * `cb` - [OPTIONAL] - a callback to be fired once the salt has been generated. uses eio making it asynchronous. If `cb` is not specified, a `Promise` is returned if Promise support is available.
-      * `err` - First parameter to the callback detailing any errors.
-      * `salt` - Second parameter to the callback providing the generated salt.
-  * `hashSync(data, salt)`
-    * `data` - [REQUIRED] - the data to be encrypted.
-    * `salt` - [REQUIRED] - the salt to be used to hash the password. if specified as a number then a salt will be generated with the specified number of rounds and used (see example under **Usage**).
-  * `hash(data, salt, cb)`
-    * `data` - [REQUIRED] - the data to be encrypted.
-    * `salt` - [REQUIRED] - the salt to be used to hash the password. if specified as a number then a salt will be generated with the specified number of rounds and used (see example under **Usage**).
-    * `cb` - [OPTIONAL] - a callback to be fired once the data has been encrypted. uses eio making it asynchronous. If `cb` is not specified, a `Promise` is returned if Promise support is available.
-      * `err` - First parameter to the callback detailing any errors.
-      * `encrypted` - Second parameter to the callback providing the encrypted form.
-  * `compareSync(data, encrypted)`
-    * `data` - [REQUIRED] - data to compare.
-    * `encrypted` - [REQUIRED] - data to be compared to.
-  * `compare(data, encrypted, cb)`
-    * `data` - [REQUIRED] - data to compare.
-    * `encrypted` - [REQUIRED] - data to be compared to.
-    * `cb` - [OPTIONAL] - a callback to be fired once the data has been compared. uses eio making it asynchronous. If `cb` is not specified, a `Promise` is returned if Promise support is available.
-      * `err` - First parameter to the callback detailing any errors.
-      * `same` - Second parameter to the callback providing whether the data and encrypted forms match [true | false].
-  * `getRounds(encrypted)` - return the number of rounds used to encrypt a given hash
-    * `encrypted` - [REQUIRED] - hash from which the number of rounds used should be extracted.
-
-## A Note on Rounds
-
-A note about the cost: when you are hashing your data, the module will go through a series of rounds to give you a secure hash. The value you submit is not just the number of rounds the module will go through to hash your data. The module will use the value you enter and go through `2^rounds` hashing iterations.
-
-From @garthk, on a 2GHz core you can roughly expect:
-
-    rounds=8 : ~40 hashes/sec
-    rounds=9 : ~20 hashes/sec
-    rounds=10: ~10 hashes/sec
-    rounds=11: ~5  hashes/sec
-    rounds=12: 2-3 hashes/sec
-    rounds=13: ~1 sec/hash
-    rounds=14: ~1.5 sec/hash
-    rounds=15: ~3 sec/hash
-    rounds=25: ~1 hour/hash
-    rounds=31: 2-3 days/hash
-
-
-## A Note on Timing Attacks
-
-Because it's come up multiple times in this project and other bcrypt projects, it needs to be said. The `bcrypt` library is not susceptible to timing attacks. From codahale/bcrypt-ruby#42:
-
-> One of the desired properties of a cryptographic hash function is preimage attack resistance, which means there is no shortcut for generating a message which, when hashed, produces a specific digest.
-
-A great thread on this, in much more detail can be found @ codahale/bcrypt-ruby#43
-
-If you're unfamiliar with timing attacks and want to learn more you can find a great writeup @ [A Lesson In Timing Attacks][timingatk]
-
-However, timing attacks are real. And the comparison function is _not_ time safe. That means that it may exit the function early in the comparison process. Timing attacks happen because of the above. We don't need to be careful that an attacker will learn anything, and our comparison function provides a comparison of hashes. It is a utility to the overall purpose of the library. If you end up using it for something else, we cannot guarantee the security of the comparator. Keep that in mind as you use the library.
-
-## Hash Info
-
-The characters that comprise the resultant hash are `./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$`.
-
-Resultant hashes will be 60 characters long and they will include the salt among other parameters, as follows:
-
-`$[algorithm]$[cost]$[salt][hash]`
-
-- 2 chars hash algorithm identifier prefix. `"$2a$" or "$2b$"` indicates BCrypt
-- Cost-factor (n). Represents the exponent used to determine how many iterations 2^n
-- 16-byte (128-bit) salt, base64 encoded to 22 characters
-- 24-byte (192-bit) hash, base64 encoded to 31 characters
-
-Example:
-```
-$2b$10$nOUIs5kJ7naTuTFkBy1veuK0kSxUFXfuaOKdOKf9xYT0KKIGSJwFa
- |  |  |                     |
- |  |  |                     hash-value = K0kSxUFXfuaOKdOKf9xYT0KKIGSJwFa
- |  |  |
- |  |  salt = nOUIs5kJ7naTuTFkBy1veu
- |  |
- |  cost-factor => 10 = 2^10 rounds
- |
- hash-algorithm identifier => 2b = BCrypt
+```js
+const bodyParser = require('body-parser')
 ```
 
-## Testing
+The `bodyParser` object exposes various factories to create middlewares. All
+middlewares will populate the `req.body` property with the parsed body when
+the `Content-Type` request header matches the `type` option.
 
-If you create a pull request, tests better pass :)
+The various errors returned by this module are described in the
+[errors section](#errors).
 
+### bodyParser.json([options])
+
+Returns middleware that only parses `json` and only looks at requests where
+the `Content-Type` header matches the `type` option. This parser accepts any
+Unicode encoding of the body and supports automatic inflation of `gzip`,
+`br` (brotli) and `deflate` encodings.
+
+A new `body` object containing the parsed data is populated on the `request`
+object after the middleware (i.e. `req.body`).
+
+#### Options
+
+The `json` function takes an optional `options` object that may contain any of
+the following keys:
+
+##### defaultCharset
+
+Specify the default character set for the json content if the charset is not
+specified in the `Content-Type` header of the request. Defaults to `utf-8`.
+
+##### inflate
+
+When set to `true`, then deflated (compressed) bodies will be inflated; when
+`false`, deflated bodies are rejected. Defaults to `true`.
+
+##### limit
+
+Controls the maximum request body size. If this is a number, then the value
+specifies the number of bytes; if it is a string, the value is passed to the
+[bytes](https://www.npmjs.com/package/bytes) library for parsing. Defaults
+to `'100kb'`.
+
+##### reviver
+
+The `reviver` option is passed directly to `JSON.parse` as the second
+argument. You can find more information on this argument
+[in the MDN documentation about JSON.parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Example.3A_Using_the_reviver_parameter).
+
+##### strict
+
+When set to `true`, will only accept arrays and objects; when `false` will
+accept anything `JSON.parse` accepts. Defaults to `true`.
+
+##### type
+
+The `type` option is used to determine what media type the middleware will
+parse. This option can be a string, array of strings, or a function. If not a
+function, `type` option is passed directly to the
+[type-is](https://www.npmjs.com/package/type-is#readme) library and this can
+be an extension name (like `json`), a mime type (like `application/json`), or
+a mime type with a wildcard (like `*/*` or `*/json`). If a function, the `type`
+option is called as `fn(req)` and the request is parsed if it returns a truthy
+value. Defaults to `application/json`.
+
+##### verify
+
+The `verify` option, if supplied, is called as `verify(req, res, buf, encoding)`,
+where `buf` is a `Buffer` of the raw request body and `encoding` is the
+encoding of the request. The parsing can be aborted by throwing an error.
+
+### bodyParser.raw([options])
+
+Returns middleware that parses all bodies as a `Buffer` and only looks at
+requests where the `Content-Type` header matches the `type` option. This
+parser supports automatic inflation of `gzip`, `br` (brotli) and `deflate`
+encodings.
+
+A new `body` object containing the parsed data is populated on the `request`
+object after the middleware (i.e. `req.body`). This will be a `Buffer` object
+of the body.
+
+#### Options
+
+The `raw` function takes an optional `options` object that may contain any of
+the following keys:
+
+##### inflate
+
+When set to `true`, then deflated (compressed) bodies will be inflated; when
+`false`, deflated bodies are rejected. Defaults to `true`.
+
+##### limit
+
+Controls the maximum request body size. If this is a number, then the value
+specifies the number of bytes; if it is a string, the value is passed to the
+[bytes](https://www.npmjs.com/package/bytes) library for parsing. Defaults
+to `'100kb'`.
+
+##### type
+
+The `type` option is used to determine what media type the middleware will
+parse. This option can be a string, array of strings, or a function.
+If not a function, `type` option is passed directly to the
+[type-is](https://www.npmjs.com/package/type-is#readme) library and this
+can be an extension name (like `bin`), a mime type (like
+`application/octet-stream`), or a mime type with a wildcard (like `*/*` or
+`application/*`). If a function, the `type` option is called as `fn(req)`
+and the request is parsed if it returns a truthy value. Defaults to
+`application/octet-stream`.
+
+##### verify
+
+The `verify` option, if supplied, is called as `verify(req, res, buf, encoding)`,
+where `buf` is a `Buffer` of the raw request body and `encoding` is the
+encoding of the request. The parsing can be aborted by throwing an error.
+
+### bodyParser.text([options])
+
+Returns middleware that parses all bodies as a string and only looks at
+requests where the `Content-Type` header matches the `type` option. This
+parser supports automatic inflation of `gzip`, `br` (brotli) and `deflate`
+encodings.
+
+A new `body` string containing the parsed data is populated on the `request`
+object after the middleware (i.e. `req.body`). This will be a string of the
+body.
+
+#### Options
+
+The `text` function takes an optional `options` object that may contain any of
+the following keys:
+
+##### defaultCharset
+
+Specify the default character set for the text content if the charset is not
+specified in the `Content-Type` header of the request. Defaults to `utf-8`.
+
+##### inflate
+
+When set to `true`, then deflated (compressed) bodies will be inflated; when
+`false`, deflated bodies are rejected. Defaults to `true`.
+
+##### limit
+
+Controls the maximum request body size. If this is a number, then the value
+specifies the number of bytes; if it is a string, the value is passed to the
+[bytes](https://www.npmjs.com/package/bytes) library for parsing. Defaults
+to `'100kb'`.
+
+##### type
+
+The `type` option is used to determine what media type the middleware will
+parse. This option can be a string, array of strings, or a function. If not
+a function, `type` option is passed directly to the
+[type-is](https://www.npmjs.com/package/type-is#readme) library and this can
+be an extension name (like `txt`), a mime type (like `text/plain`), or a mime
+type with a wildcard (like `*/*` or `text/*`). If a function, the `type`
+option is called as `fn(req)` and the request is parsed if it returns a
+truthy value. Defaults to `text/plain`.
+
+##### verify
+
+The `verify` option, if supplied, is called as `verify(req, res, buf, encoding)`,
+where `buf` is a `Buffer` of the raw request body and `encoding` is the
+encoding of the request. The parsing can be aborted by throwing an error.
+
+### bodyParser.urlencoded([options])
+
+Returns middleware that only parses `urlencoded` bodies and only looks at
+requests where the `Content-Type` header matches the `type` option. This
+parser accepts only UTF-8 and ISO-8859-1 encodings of the body and supports 
+automatic inflation of `gzip`, `br` (brotli) and `deflate` encodings.
+
+A new `body` object containing the parsed data is populated on the `request`
+object after the middleware (i.e. `req.body`). This object will contain
+key-value pairs, where the value can be a string or array (when `extended` is
+`false`), or any type (when `extended` is `true`).
+
+#### Options
+
+The `urlencoded` function takes an optional `options` object that may contain
+any of the following keys:
+
+##### extended
+
+The "extended" syntax allows for rich objects and arrays to be encoded into the
+URL-encoded format, allowing for a JSON-like experience with URL-encoded. For
+more information, please [see the qs
+library](https://www.npmjs.com/package/qs#readme).
+
+Defaults to `false`.
+
+##### inflate
+
+When set to `true`, then deflated (compressed) bodies will be inflated; when
+`false`, deflated bodies are rejected. Defaults to `true`.
+
+##### limit
+
+Controls the maximum request body size. If this is a number, then the value
+specifies the number of bytes; if it is a string, the value is passed to the
+[bytes](https://www.npmjs.com/package/bytes) library for parsing. Defaults
+to `'100kb'`.
+
+##### parameterLimit
+
+The `parameterLimit` option controls the maximum number of parameters that
+are allowed in the URL-encoded data. If a request contains more parameters
+than this value, a 413 will be returned to the client. Defaults to `1000`.
+
+##### type
+
+The `type` option is used to determine what media type the middleware will
+parse. This option can be a string, array of strings, or a function. If not
+a function, `type` option is passed directly to the
+[type-is](https://www.npmjs.com/package/type-is#readme) library and this can
+be an extension name (like `urlencoded`), a mime type (like
+`application/x-www-form-urlencoded`), or a mime type with a wildcard (like
+`*/x-www-form-urlencoded`). If a function, the `type` option is called as
+`fn(req)` and the request is parsed if it returns a truthy value. Defaults
+to `application/x-www-form-urlencoded`.
+
+##### verify
+
+The `verify` option, if supplied, is called as `verify(req, res, buf, encoding)`,
+where `buf` is a `Buffer` of the raw request body and `encoding` is the
+encoding of the request. The parsing can be aborted by throwing an error.
+
+##### defaultCharset
+
+The default charset to parse as, if not specified in content-type. Must be
+either `utf-8` or `iso-8859-1`. Defaults to `utf-8`.
+
+##### charsetSentinel
+
+Whether to let the value of the `utf8` parameter take precedence as the charset
+selector. It requires the form to contain a parameter named `utf8` with a value
+of `✓`. Defaults to `false`.
+
+##### interpretNumericEntities
+
+Whether to decode numeric entities such as `&#9786;` when parsing an iso-8859-1
+form. Defaults to `false`.
+
+
+##### depth
+
+The `depth` option is used to configure the maximum depth of the `qs` library when `extended` is `true`. This allows you to limit the amount of keys that are parsed and can be useful to prevent certain types of abuse. Defaults to `32`. It is recommended to keep this value as low as possible.
+
+## Errors
+
+The middlewares provided by this module create errors using the
+[`http-errors` module](https://www.npmjs.com/package/http-errors). The errors
+will typically have a `status`/`statusCode` property that contains the suggested
+HTTP response code, an `expose` property to determine if the `message` property
+should be displayed to the client, a `type` property to determine the type of
+error without matching against the `message`, and a `body` property containing
+the read body, if available.
+
+The following are the common errors created, though any error can come through
+for various reasons.
+
+### content encoding unsupported
+
+This error will occur when the request had a `Content-Encoding` header that
+contained an encoding but the "inflation" option was set to `false`. The
+`status` property is set to `415`, the `type` property is set to
+`'encoding.unsupported'`, and the `charset` property will be set to the
+encoding that is unsupported.
+
+### entity parse failed
+
+This error will occur when the request contained an entity that could not be
+parsed by the middleware. The `status` property is set to `400`, the `type`
+property is set to `'entity.parse.failed'`, and the `body` property is set to
+the entity value that failed parsing.
+
+### entity verify failed
+
+This error will occur when the request contained an entity that could not be
+failed verification by the defined `verify` option. The `status` property is
+set to `403`, the `type` property is set to `'entity.verify.failed'`, and the
+`body` property is set to the entity value that failed verification.
+
+### request aborted
+
+This error will occur when the request is aborted by the client before reading
+the body has finished. The `received` property will be set to the number of
+bytes received before the request was aborted and the `expected` property is
+set to the number of expected bytes. The `status` property is set to `400`
+and `type` property is set to `'request.aborted'`.
+
+### request entity too large
+
+This error will occur when the request body's size is larger than the "limit"
+option. The `limit` property will be set to the byte limit and the `length`
+property will be set to the request body's length. The `status` property is
+set to `413` and the `type` property is set to `'entity.too.large'`.
+
+### request size did not match content length
+
+This error will occur when the request's length did not match the length from
+the `Content-Length` header. This typically occurs when the request is malformed,
+typically when the `Content-Length` header was calculated based on characters
+instead of bytes. The `status` property is set to `400` and the `type` property
+is set to `'request.size.invalid'`.
+
+### stream encoding should not be set
+
+This error will occur when something called the `req.setEncoding` method prior
+to this middleware. This module operates directly on bytes only and you cannot
+call `req.setEncoding` when using this module. The `status` property is set to
+`500` and the `type` property is set to `'stream.encoding.set'`.
+
+### stream is not readable
+
+This error will occur when the request is no longer readable when this middleware
+attempts to read it. This typically means something other than a middleware from
+this module read the request body already and the middleware was also configured to
+read the same request. The `status` property is set to `500` and the `type`
+property is set to `'stream.not.readable'`.
+
+### too many parameters
+
+This error will occur when the content of the request exceeds the configured
+`parameterLimit` for the `urlencoded` parser. The `status` property is set to
+`413` and the `type` property is set to `'parameters.too.many'`.
+
+### unsupported charset "BOGUS"
+
+This error will occur when the request had a charset parameter in the
+`Content-Type` header, but the `iconv-lite` module does not support it OR the
+parser does not support it. The charset is contained in the message as well
+as in the `charset` property. The `status` property is set to `415`, the
+`type` property is set to `'charset.unsupported'`, and the `charset` property
+is set to the charset that is unsupported.
+
+### unsupported content encoding "bogus"
+
+This error will occur when the request had a `Content-Encoding` header that
+contained an unsupported encoding. The encoding is contained in the message
+as well as in the `encoding` property. The `status` property is set to `415`,
+the `type` property is set to `'encoding.unsupported'`, and the `encoding`
+property is set to the encoding that is unsupported.
+
+### The input exceeded the depth
+
+This error occurs when using `bodyParser.urlencoded` with the `extended` property set to `true` and the input exceeds the configured `depth` option. The `status` property is set to `400`. It is recommended to review the `depth` option and evaluate if it requires a higher value. When the `depth` option is set to `32` (default value), the error will not be thrown.
+
+## Examples
+
+### Express/Connect top-level generic
+
+This example demonstrates adding a generic JSON and URL-encoded parser as a
+top-level middleware, which will parse the bodies of all incoming requests.
+This is the simplest setup.
+
+```js
+const express = require('express')
+const bodyParser = require('body-parser')
+
+const app = express()
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded())
+
+// parse application/json
+app.use(bodyParser.json())
+
+app.use(function (req, res) {
+  res.setHeader('Content-Type', 'text/plain')
+  res.write('you posted:\n')
+  res.end(String(JSON.stringify(req.body, null, 2)))
+})
 ```
-npm install
-npm test
+
+### Express route-specific
+
+This example demonstrates adding body parsers specifically to the routes that
+need them. In general, this is the most recommended way to use body-parser with
+Express.
+
+```js
+const express = require('express')
+const bodyParser = require('body-parser')
+
+const app = express()
+
+// create application/json parser
+const jsonParser = bodyParser.json()
+
+// create application/x-www-form-urlencoded parser
+const urlencodedParser = bodyParser.urlencoded()
+
+// POST /login gets urlencoded bodies
+app.post('/login', urlencodedParser, function (req, res) {
+  if (!req.body || !req.body.username) res.sendStatus(400)
+  res.send('welcome, ' + req.body.username)
+})
+
+// POST /api/users gets JSON bodies
+app.post('/api/users', jsonParser, function (req, res) {
+  if (!req.body) res.sendStatus(400)
+  // create user in req.body
+})
 ```
 
-## Credits
+### Change accepted type for parsers
 
-The code for this comes from a few sources:
+All the parsers accept a `type` option which allows you to change the
+`Content-Type` that the middleware will parse.
 
-* blowfish.cc - OpenBSD
-* bcrypt.cc - OpenBSD
-* bcrypt::gen_salt - [gen_salt inclusion to bcrypt][bcryptgs]
-* bcrypt_node.cc - me
+```js
+const express = require('express')
+const bodyParser = require('body-parser')
 
-## Contributors
+const app = express()
 
-* [Antonio Salazar Cardozo][shadowfiend] - Early MacOS X support (when we used libbsd)
-* [Ben Glow][pixelglow] - Fixes for thread safety with async calls
-* [Van Nguyen][thegoleffect] - Found a timing attack in the comparator
-* [NewITFarmer][newitfarmer] - Initial Cygwin support
-* [David Trejo][dtrejo] - packaging fixes
-* [Alfred Westerveld][alfredwesterveld] - packaging fixes
-* [Vincent Côté-Roy][vincentr] - Testing around concurrency issues
-* [Lloyd Hilaiel][lloyd] - Documentation fixes
-* [Roman Shtylman][shtylman] - Code refactoring, general rot reduction, compile options, better memory management with delete and new, and an upgrade to libuv over eio/ev.
-* [Vadim Graboys][vadimg] - Code changes to support 0.5.5+
-* [Ben Noordhuis][bnoordhuis] - Fixed a thread safety issue in nodejs that was perfectly mappable to this module.
-* [Nate Rajlich][tootallnate] - Bindings and build process.
-* [Sean McArthur][seanmonstar] - Windows Support
-* [Fanie Oosthuysen][weareu] - Windows Support
-* [Amitosh Swain Mahapatra][recrsn] - $2b$ hash support, ES6 Promise support
-* [Nicola Del Gobbo][NickNaso] - Initial implementation with N-API
+// parse various different custom JSON types as JSON
+app.use(bodyParser.json({ type: 'application/*+json' }))
+
+// parse some custom thing into a Buffer
+app.use(bodyParser.raw({ type: 'application/vnd.custom-type' }))
+
+// parse an HTML body into a string
+app.use(bodyParser.text({ type: 'text/html' }))
+```
 
 ## License
-Unless stated elsewhere, file headers or otherwise, the license as stated in the LICENSE file.
 
-[bcryptwiki]: https://en.wikipedia.org/wiki/Bcrypt
-[bcryptgs]: http://mail-index.netbsd.org/tech-crypto/2002/05/24/msg000204.html
-[codahale]: http://codahale.com/how-to-safely-store-a-password/
-[gh13]: https://github.com/ncb000gt/node.bcrypt.js/issues/13
-[jtr]: http://www.openwall.com/lists/oss-security/2011/06/20/2
-[depsinstall]: https://github.com/kelektiv/node.bcrypt.js/wiki/Installation-Instructions
-[timingatk]: https://codahale.com/a-lesson-in-timing-attacks/
-[wrap-around-bug]: https://github.com/kelektiv/node.bcrypt.js/wiki/Security-Issues-and-Concerns#bcrypt-wrap-around-bug-medium-severity
-[improper-nuls]: https://github.com/kelektiv/node.bcrypt.js/wiki/Security-Issues-and-Concerns#improper-nul-handling-medium-severity
+[MIT](LICENSE)
 
-[shadowfiend]:https://github.com/Shadowfiend
-[thegoleffect]:https://github.com/thegoleffect
-[pixelglow]:https://github.com/pixelglow
-[dtrejo]:https://github.com/dtrejo
-[alfredwesterveld]:https://github.com/alfredwesterveld
-[newitfarmer]:https://github.com/newitfarmer
-[zooko]:https://twitter.com/zooko
-[vincentr]:https://twitter.com/vincentcr
-[lloyd]:https://github.com/lloyd
-[shtylman]:https://github.com/shtylman
-[vadimg]:https://github.com/vadimg
-[bnoordhuis]:https://github.com/bnoordhuis
-[tootallnate]:https://github.com/tootallnate
-[seanmonstar]:https://github.com/seanmonstar
-[weareu]:https://github.com/weareu
-[recrsn]:https://github.com/recrsn
-[NickNaso]: https://github.com/NickNaso
+[ci-image]: https://img.shields.io/github/actions/workflow/status/expressjs/body-parser/ci.yml?branch=master&label=ci
+[ci-url]: https://github.com/expressjs/body-parser/actions/workflows/ci.yml
+[coveralls-image]: https://img.shields.io/coverallsCoverage/github/expressjs/body-parser?branch=master
+[coveralls-url]: https://coveralls.io/r/expressjs/body-parser?branch=master
+[npm-downloads-image]: https://img.shields.io/npm/dm/body-parser
+[npm-url]: https://npmjs.com/package/body-parser
+[npm-version-image]: https://img.shields.io/npm/v/body-parser
+[ossf-scorecard-badge]: https://api.scorecard.dev/projects/github.com/expressjs/body-parser/badge
+[ossf-scorecard-visualizer]: https://ossf.github.io/scorecard-visualizer/#/projects/github.com/expressjs/body-parser

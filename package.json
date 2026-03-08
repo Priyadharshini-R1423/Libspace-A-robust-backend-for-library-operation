@@ -1,62 +1,52 @@
 {
-  "name": "bcrypt",
-  "description": "A bcrypt library for NodeJS.",
-  "keywords": [
-    "bcrypt",
-    "password",
-    "auth",
-    "authentication",
-    "encryption",
-    "crypt",
-    "crypto"
+  "name": "body-parser",
+  "description": "Node.js body parsing middleware",
+  "version": "2.2.2",
+  "contributors": [
+    "Douglas Christopher Wilson <doug@somethingdoug.com>",
+    "Jonathan Ong <me@jongleberry.com> (http://jongleberry.com)"
   ],
-  "main": "./bcrypt",
-  "version": "6.0.0",
-  "author": "Nick Campbell (https://github.com/ncb000gt)",
-  "engines": {
-    "node": ">= 18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kelektiv/node.bcrypt.js.git"
-  },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/kelektiv/node.bcrypt.js/issues"
-  },
-  "scripts": {
-    "test": "jest",
-    "install": "node-gyp-build",
-    "build": "prebuildify --napi --tag-libc --strip"
+  "repository": "expressjs/body-parser",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/express"
   },
   "dependencies": {
-    "node-addon-api": "^8.3.0",
-    "node-gyp-build": "^4.8.4"
+    "bytes": "^3.1.2",
+    "content-type": "^1.0.5",
+    "debug": "^4.4.3",
+    "http-errors": "^2.0.0",
+    "iconv-lite": "^0.7.0",
+    "on-finished": "^2.4.1",
+    "qs": "^6.14.1",
+    "raw-body": "^3.0.1",
+    "type-is": "^2.0.1"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "prebuildify": "^6.0.1"
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-markdown": "^3.0.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.6.0",
+    "eslint-plugin-standard": "^4.1.0",
+    "mocha": "^11.1.0",
+    "nyc": "^17.1.0",
+    "supertest": "^7.0.0"
   },
-  "contributors": [
-    "Antonio Salazar Cardozo <savedfastcool@gmail.com> (https://github.com/Shadowfiend)",
-    "Van Nguyen <the.gol.effect@gmail.com> (https://github.com/thegoleffect)",
-    "David Trejo <david@dtrejo.com> (https://github.com/dtrejo)",
-    "Ben Glow <glen.low@pixelglow.com> (https://github.com/pixelglow)",
-    "NewITFarmer.com <> (https://github.com/newitfarmer)",
-    "Alfred Westerveld <alfredwesterveld@gmail.com> (https://github.com/alfredwesterveld)",
-    "Vincent Côté-Roy <vincentcr@gmail.com> (https://github.com/vincentcr)",
-    "Lloyd Hilaiel <lloyd@hilaiel.com> (https://github.com/lloyd)",
-    "Roman Shtylman <shtylman@gmail.com> (https://github.com/shtylman)",
-    "Vadim Graboys <dimva13@gmail.com> (https://github.com/vadimg)",
-    "Ben Noorduis <> (https://github.com/bnoordhuis)",
-    "Nate Rajlich <nathan@tootallnate.net> (https://github.com/tootallnate)",
-    "Sean McArthur <sean.monstar@gmail.com> (https://github.com/seanmonstar)",
-    "Fanie Oosthuysen <fanie.oosthuysen@gmail.com> (https://github.com/weareu)",
-    "Amitosh Swain Mahapatra <amitosh.swain@gmail.com> (https://github.com/Agathver)",
-    "Corbin Crutchley <crutchcorn@gmail.com> (https://github.com/crutchcorn)",
-    "Nicola Del Gobbo <nicoladelgobbo@gmail.com> (https://github.com/NickNaso)"
+  "files": [
+    "lib/",
+    "LICENSE",
+    "index.js"
   ],
-  "binary": {
-    "module_name": "bcrypt_lib"
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "mocha --reporter spec --check-leaks test/",
+    "test-ci": "nyc --reporter=lcovonly --reporter=text npm test",
+    "test-cov": "nyc --reporter=html --reporter=text npm test"
   }
 }
